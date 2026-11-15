@@ -1,0 +1,7 @@
+<application>
+  <nav>
+    <view name="kernel_overview" />
+    <view name="kernel_metrics" />
+    <search label="TA-kernel Events" search="search index=main sourcetype=kernel:status" />
+  </nav>
+</application>

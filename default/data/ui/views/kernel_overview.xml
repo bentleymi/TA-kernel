@@ -1,0 +1,47 @@
+<dashboard version="1.1" theme="light">
+  <label>TA-kernel Overview</label>
+  <description>Collects kernel crash-readiness and crash signals: kexec crash kernel loaded, kdump service state, kernel taint state, uptime, and counts of NEW oops/panic/BUG lines in the kernel</description>
+  <row>
+    <panel>
+      <title>Hosts Reporting (latest)</title>
+      <table>
+        <search>
+          <query>index=main sourcetype="kernel:status"
+| stats latest(_time) as "Last seen", count as Reports by host
+| table host "Last seen" Reports</query>
+          <done/>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Distinct kernel.* Metrics (last hour)</title>
+      <single>
+        <search>
+          <query>| mcatalog values(metric_name) as m where index=metrics metric_name="kernel.*"
+| eval count=mvcount(m)</query>
+          <done/>
+        </search>
+        <option name="underLabel">kernel.* metrics streaming</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Issues (newest first)</title>
+      <table>
+        <search>
+          <query>index=main sourcetype="kernel:status" _raw="*alarm*"
+| sort - _time
+| table _time host _raw
+| rename _raw as Event
+| head 200</query>
+          <done/>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+</dashboard>

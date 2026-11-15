@@ -1,0 +1,54 @@
+<dashboard version="1.1" theme="light">
+  <label>TA-kernel Metrics</label>
+  <description>Index-time metrics over index=metrics (sourcetype=kernel:metrics)</description>
+  <row>
+    <panel>
+      <title>All kernel.* series</title>
+      <chart>
+        <search>
+          <query>| mstats avg("kernel.*") as "v*" where index=metrics by metric_name span=5m
+| 1=1
+| foreach v* [eval Value=coalesce(Value,&lt;&lt;FIELD&gt;&gt;)]
+| fields - v*
+| xyseries _time metric_name Value</query>
+          <done/>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+      <panel>
+      <title>Crash readiness (kexec/kdump)</title>
+      <chart>
+        <search>
+          <query>| mstats avg("kernel.*") as "v*" where index=metrics by metric_name span=5m
+| search metric_name IN ("*kexec_crash_loaded*","*kdump_active*","*tainted*")
+| foreach v* [eval Value=coalesce(Value,&lt;&lt;FIELD&gt;&gt;)]
+| fields - v*
+| xyseries _time metric_name Value</query>
+          <done/>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+      <panel>
+      <title>New oops / panic / BUG since last cycle</title>
+      <chart>
+        <search>
+          <query>| mstats avg("kernel.*") as "v*" where index=metrics by metric_name span=5m
+| search metric_name IN ("*oops_new*","*panic_new*","*bug_new*")
+| foreach v* [eval Value=coalesce(Value,&lt;&lt;FIELD&gt;&gt;)]
+| fields - v*
+| xyseries _time metric_name Value</query>
+          <done/>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+</dashboard>

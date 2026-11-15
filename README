@@ -1,0 +1,55 @@
+TA-kernel
+====
+
+Collects kernel crash-readiness and crash signals: kexec crash kernel loaded, kdump service state, kernel taint state, uptime, and counts of NEW oops/panic/BUG lines in the kernel journal ring since the previous cycle. Emits JSON events to index=main (sourcetype kernel:status) and kernel.* metrics to index=metrics (sourcetype kernel:metrics); alarm status when new oops/panic/BUG lines are detected.
+
+Prerequisites
+-------------
+  * systemd-journald (kernel log in the journal)
+  * kdump service is checked but not required to be enabled
+  * Splunk Enterprise or Universal Forwarder 9.x - 10.6 (forwarder recommended
+    on monitored hosts).
+  * A metrics-typed index (default name: metrics) on the indexer:
+
+      [metrics]
+      datatype = metric
+
+    Forwarders only need that index to exist on the indexer side.
+  * No network egress, no root requirement beyond the Splunk service account.
+    Fully standalone add-on with no dependencies.
+
+Install
+-------
+Install on each monitored host (Apps > Install app from file, splunk install
+app, or deployment server), restart Splunk, then verify:
+
+  index=main sourcetype="kernel:status" | head
+
+Search quick reference
+----------------------
+  index=main sourcetype="kernel:status" | head
+  | mcatalog values(metric_name) where index=metrics metric_name="kernel.*" by host
+  | mstats avg("kernel.*") where index=metrics span=60s by host
+
+Usage
+-----
+Events: index=main sourcetype=kernel:status  (kexec_crash_loaded, kdump_active, taint, uptime_s, new counts)
+Metrics: kernel.kexec_crash_loaded, kernel.kdump_active, kernel.tainted, kernel.oops_new, kernel.panic_new
+Alarm status when new oops/panic/BUG lines appear since the previous run.
+Dashboards: TA-Kernel > Kernel Overview / Kernel Metrics
+
+Configure
+---------
+Override the interval or destination index in etc/apps/TA-kernel/local/inputs.conf
+(never edit default/).
+
+Troubleshooting
+---------------
+  * State file under /var/tmp holds the last-seen journal position; first run after install establishes a baseline.
+  * Kernel logs must be in the journal (default on systemd hosts).
+
+License
+-------
+SOURCE-AVAILABLE (see LICENSE) - free personal, educational and evaluation
+use; commercial or production use requires a paid license from BentleyPC
+LLC (https://www.bentleypc.com).
