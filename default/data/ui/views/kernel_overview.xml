@@ -3,43 +3,64 @@
   <description>Collects kernel crash-readiness and crash signals: kexec crash kernel loaded, kdump service state, kernel taint state, uptime, and counts of NEW oops/panic/BUG lines in the kernel</description>
   <row>
     <panel>
-      <title>Hosts Reporting (latest)</title>
-      <table>
-        <search>
-          <query>index=main sourcetype="kernel:status"
-| stats latest(_time) as "Last seen", count as Reports by host
-| table host "Last seen" Reports</query>
-          <done/>
-        </search>
-        <option name="drilldown">none</option>
-      </table>
-    </panel>
-  </row>
-  <row>
-    <panel>
-      <title>Distinct kernel.* Metrics (last hour)</title>
+      <title>Uptime (hours, avg per host)</title>
       <single>
         <search>
-          <query>| mcatalog values(metric_name) as m where index=metrics metric_name="kernel.*"
-| eval count=mvcount(m)</query>
+          <query>index=main sourcetype="kernel:status"
+| stats avg(uptime_s) as value
+| eval value=round(value/3600.0, 1)</query>
           <done/>
         </search>
-        <option name="underLabel">kernel.* metrics streaming</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Kernel taint flags (avg)</title>
+      <single>
+        <search>
+          <query>index=main sourcetype="kernel:status"
+| stats avg(tainted) as value</query>
+          <done/>
+        </search>
+      </single>
+    </panel>
+    <panel>
+      <title>kdump ready (1=yes, avg)</title>
+      <single>
+        <search>
+          <query>index=main sourcetype="kernel:status"
+| stats avg(kdump_active) as value</query>
+          <done/>
+        </search>
+      </single>
+    </panel>
+    <panel>
+      <title>Kernel crash kexec ready (1=yes, avg)</title>
+      <single>
+        <search>
+          <query>index=main sourcetype="kernel:status"
+| stats avg(kexec_crash_loaded) as value</query>
+          <done/>
+        </search>
       </single>
     </panel>
   </row>
   <row>
     <panel>
-      <title>Issues (newest first)</title>
+      <title>Journal kernel-event scan - latest per host</title>
       <table>
         <search>
-          <query>index=main sourcetype="kernel:status" _raw="*alarm*"
-| sort - _time
-| table _time host _raw
-| rename _raw as Event
-| head 200</query>
+          <query>index=main sourcetype="kernel:status"
+| dedup host
+| rex field=_raw max_match=0 "\"(?&lt;k&gt;[^\"]+)\":\s*(?&lt;o&gt;\{[^{}]*\})"
+| where match(o,"\"oops_new\"")
+| eval z=mvzip(k,o,"^^")
+| mvexpand z
+| rex field=z "^(?&lt;k&gt;[^^]+)\^\^(?&lt;o&gt;.+)$"
+| spath input=o path=journal_readable | spath input=o path=bug_new | spath input=o path=oops_new | spath input=o path=panic_new
+| table host k journal_readable bug_new oops_new panic_new</query>
           <done/>
         </search>
+        <option name="count">100</option>
         <option name="drilldown">none</option>
       </table>
     </panel>

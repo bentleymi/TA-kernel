@@ -1,51 +1,92 @@
 <dashboard version="1.1" theme="light">
   <label>TA-kernel Metrics</label>
-  <description>Index-time metrics over index=metrics (sourcetype=kernel:metrics)</description>
+  <description> Index-time metrics over index=metrics (sourcetype kernel:metrics); series prefixed 'kernel.'.</description>
   <row>
     <panel>
-      <title>All kernel.* series</title>
+      <title>Uptime (s, per host)</title>
       <chart>
         <search>
-          <query>| mstats avg("kernel.*") as "v*" where index=metrics by metric_name span=5m
-| foreach v* [eval Value=coalesce(Value,&lt;&lt;FIELD&gt;&gt;)]
-| fields - v*
-| xyseries _time metric_name Value</query>
+          <query>| mstats avg("kernel.uptime_s") as value where index=metrics by metric_name span=5m
+| rename value as "kernel.uptime_s"</query>
           <done/>
         </search>
         <option name="charting.chart">line</option>
-        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.nullValueRendering">connect</option>
         <option name="charting.drilldown">none</option>
       </chart>
     </panel>
-      <panel>
-      <title>Crash readiness (kexec/kdump)</title>
+  </row>
+  <row>
+    <panel>
+      <title>Taint flags (per host)</title>
       <chart>
         <search>
-          <query>| mstats avg("kernel.*") as "v*" where index=metrics by metric_name span=5m
-| search metric_name IN ("*kexec_crash_loaded*","*kdump_active*","*tainted*")
-| foreach v* [eval Value=coalesce(Value,&lt;&lt;FIELD&gt;&gt;)]
-| fields - v*
-| xyseries _time metric_name Value</query>
+          <query>| mstats avg("kernel.tainted") as value where index=metrics by metric_name span=5m
+| rename value as "kernel.tainted"</query>
           <done/>
         </search>
         <option name="charting.chart">line</option>
-        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.nullValueRendering">connect</option>
         <option name="charting.drilldown">none</option>
       </chart>
     </panel>
-      <panel>
-      <title>New oops / panic / BUG since last cycle</title>
+  </row>
+  <row>
+    <panel>
+      <title>New kernel bad events (oops / panic / bug) per cycle</title>
       <chart>
         <search>
-          <query>| mstats avg("kernel.*") as "v*" where index=metrics by metric_name span=5m
-| search metric_name IN ("*oops_new*","*panic_new*","*bug_new*")
-| foreach v* [eval Value=coalesce(Value,&lt;&lt;FIELD&gt;&gt;)]
-| fields - v*
-| xyseries _time metric_name Value</query>
+          <query>| mstats avg("kernel.*_new") as "v*" where index=metrics by metric_name span=5m
+| rename v* as "kernel.*_new"</query>
           <done/>
         </search>
         <option name="charting.chart">line</option>
-        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.nullValueRendering">connect</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Kdump ready (0/1 per host)</title>
+      <chart>
+        <search>
+          <query>| mstats avg("kernel.kdump_active") as value where index=metrics by metric_name span=5m
+| rename value as "kernel.kdump_active"</query>
+          <done/>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueRendering">connect</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Crash-kexec kernel loaded (0/1 per host)</title>
+      <chart>
+        <search>
+          <query>| mstats avg("kernel.kexec_crash_loaded") as value where index=metrics by metric_name span=5m
+| rename value as "kernel.kexec_crash_loaded"</query>
+          <done/>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueRendering">connect</option>
+        <option name="charting.drilldown">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Kernel journal readable (0/1 per host)</title>
+      <chart>
+        <search>
+          <query>| mstats avg("kernel.journal_readable") as value where index=metrics by metric_name span=5m
+| rename value as "kernel.journal_readable"</query>
+          <done/>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueRendering">connect</option>
         <option name="charting.drilldown">none</option>
       </chart>
     </panel>
