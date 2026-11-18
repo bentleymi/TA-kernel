@@ -6,7 +6,7 @@
       <title>Uptime (s, per host)</title>
       <chart>
         <search>
-          <query>| mstats avg("kernel.uptime_s") as value where index=metrics by metric_name span=5m
+          <query>| mstats avg("kernel.uptime_s") as value where index=metrics by metric_name, host span=5m
 | rename value as "kernel.uptime_s"</query>
           <done/>
         </search>
@@ -21,7 +21,7 @@
       <title>Taint flags (per host)</title>
       <chart>
         <search>
-          <query>| mstats avg("kernel.tainted") as value where index=metrics by metric_name span=5m
+          <query>| mstats avg("kernel.tainted") as value where index=metrics by metric_name, host span=5m
 | rename value as "kernel.tainted"</query>
           <done/>
         </search>
@@ -36,7 +36,7 @@
       <title>New kernel bad events (oops / panic / bug) per cycle</title>
       <chart>
         <search>
-          <query>| mstats avg("kernel.*_new") as "v*" where index=metrics by metric_name span=5m
+          <query>| mstats avg("kernel.*_new") as "v*" where index=metrics by metric_name, host span=5m
 | rename v* as "kernel.*_new"</query>
           <done/>
         </search>
@@ -51,7 +51,7 @@
       <title>Kdump ready (0/1 per host)</title>
       <chart>
         <search>
-          <query>| mstats avg("kernel.kdump_active") as value where index=metrics by metric_name span=5m
+          <query>| mstats avg("kernel.kdump_active") as value where index=metrics by metric_name, host span=5m
 | rename value as "kernel.kdump_active"</query>
           <done/>
         </search>
@@ -66,7 +66,7 @@
       <title>Crash-kexec kernel loaded (0/1 per host)</title>
       <chart>
         <search>
-          <query>| mstats avg("kernel.kexec_crash_loaded") as value where index=metrics by metric_name span=5m
+          <query>| mstats avg("kernel.kexec_crash_loaded") as value where index=metrics by metric_name, host span=5m
 | rename value as "kernel.kexec_crash_loaded"</query>
           <done/>
         </search>
@@ -81,7 +81,7 @@
       <title>Kernel journal readable (0/1 per host)</title>
       <chart>
         <search>
-          <query>| mstats avg("kernel.journal_readable") as value where index=metrics by metric_name span=5m
+          <query>| mstats avg("kernel.journal_readable") as value where index=metrics by metric_name, host span=5m
 | rename value as "kernel.journal_readable"</query>
           <done/>
         </search>

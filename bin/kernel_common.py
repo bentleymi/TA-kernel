@@ -6,7 +6,7 @@ import subprocess
 import sys
 import time
 
-STATE_FILE = "/var/tmp/ta_kernel_state.json"
+STATE_FILE_TEMPLATE = "/var/tmp/ta_kernel_state_%d.json"
 SAME_CYCLE_SECS = 60
 
 KEXEC_CRASH_LOADED = "/sys/kernel/kexec_crash_loaded"
@@ -38,7 +38,12 @@ def _num(x):
 def _readiness():
     data = {}
     kr = read_file(KEXEC_CRASH_LOADED)
-    data["kexec_crash_loaded"] = 1 if kr == "1" else 0
+    if kr is None:
+        data["kexec_crash_loaded"] = None
+        data["kexec_crash_loaded_readable"] = 0
+    else:
+        data["kexec_crash_loaded"] = 1 if kr == "1" else 0
+        data["kexec_crash_loaded_readable"] = 1
     try:
         p = subprocess.run(["systemctl", "is-active", "kdump"], capture_output=True, text=True, timeout=25)
         data["kdump_active"] = 1 if p.stdout.strip() == "active" else 0
@@ -86,9 +91,13 @@ def _count_new(text):
     return counts
 
 
+def _state_path():
+    return STATE_FILE_TEMPLATE % os.getuid()
+
+
 def _load_state():
     try:
-        with open(STATE_FILE) as fh:
+        with open(_state_path()) as fh:
             state = json.load(fh)
     except (OSError, ValueError):
         return {}
@@ -96,12 +105,20 @@ def _load_state():
 
 
 def _save_state(state):
+    path = _state_path()
+    tmp = "%s.tmp.%d" % (path, os.getpid())
     try:
-        os.makedirs("/var/tmp", exist_ok=True)
-        with open(STATE_FILE, "w") as fh:
+        with open(tmp, "w") as fh:
             json.dump(state, fh)
-    except (OSError, TypeError, ValueError):
-        pass
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, path)
+    except (OSError, TypeError, ValueError) as exc:
+        sys.stderr.write("TA-kernel state save failed for %s: %s\n" % (path, exc))
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
 
 
 def discover():
@@ -143,7 +160,7 @@ def metrics_payload(data):
     if not isinstance(data, dict):
         data = {}
     payload = {}
-    for key in ("kexec_crash_loaded", "kdump_active", "tainted", "uptime_s"):
+    for key in ("kexec_crash_loaded", "kexec_crash_loaded_readable", "kdump_active", "tainted", "uptime_s"):
         v = _num(data.get(key))
         if v is not None:
             payload[key] = int(v)
